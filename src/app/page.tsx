@@ -16,7 +16,7 @@ export default function Page() {
   return (
     <div style={{maxWidth:700, margin:'0 auto', padding:20, fontFamily:'sans-serif'}}>
       <h1 style={{textAlign:'center'}}>NANIE AI VENUS 🌕</h1>
-      <p style={{textAlign:'center', color:'#666'}}>COM8 • D4→IN1 • Dubai • Better than CHINNA • BRAIN v6 - Grey Always</p>
+      <p style={{textAlign:'center', color:'#666'}}>COM8 • D4→IN1 • Dubai • Better than CHINNA • BRAIN v9 - Grey Always</p>
       <div style={{border:'1px solid #ddd', height:400, overflowY:'auto', padding:10, borderRadius:8, marginBottom:10}}>
         {messages.map(m=>{
           const text = (m as any).content || (m.parts ? m.parts.filter((p:any)=>p.type==='text').map((p:any)=>p.text).join('') : '');

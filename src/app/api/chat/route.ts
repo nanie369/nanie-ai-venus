@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         writer.write({ 
           type: 'text-delta', 
           id: 'text-1', 
-          delta: `BRO! NANIE AI VENUS v9 LIVE! 🔥\n\nError: ${error.message}\n\nKey starts: ${process.env.GOOGLE_GENERATIVE_AI_API_KEY?.substring(0,12)}...\n\nOld models 1.5-flash and 2.0-flash are 404 for new AQ keys! Now using 2.0-flash-exp!\n\nGo to Vercel -> Env Vars -> Update GOOGLE key AQ.Ab8RN6L-... -> Redeploy WITHOUT cache!\n\n- GOD NANIE - Better than CHINNA - Dubai` 
+          delta: `BRO! NANIE AI VENUS v9 LIVE! 🔥\n\nError: ${error.message}\n\nKey: ${process.env.GOOGLE_GENERATIVE_AI_API_KEY?.substring(0,12)}...\n\nThis proves GREY WORKS! - GOD NANIE - Dubai` 
         });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
