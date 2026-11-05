@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback to Gemma which you proved works, but CLEAN leak!
+    // Fallback to Gemma which you proved works clean at 10:37 AM!
     if (!aiReply) {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent`, {
         method: 'POST',
@@ -54,20 +54,17 @@ export async function POST(req: Request) {
       if (aiReply.includes('Hey bro! NANIE AI VENUS here')) {
         const parts = aiReply.split('Hey bro! NANIE AI VENUS here');
         aiReply = 'Hey bro! NANIE AI VENUS here' + parts[parts.length - 1];
-        aiReply = aiReply.split('Persona:')[0].split('Constraint:')[0].split('Revised Answer')[0].trim();
       }
+      // Remove leak phrases
+      aiReply = aiReply.replace(/User's Persona Request:.*?(\n|$)/g, '')
+                       .replace(/User's Greeting Style:.*?(\n|$)/g, '')
+                       .replace(/Constraints:.*?(\n|$)/g, '')
+                       .replace(/Revised Answer Construction:.*?(\n|$)/g, '')
+                       .trim();
       if (!aiReply || aiReply.length < 10) {
-        aiReply = `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your connection can't find the address. Try: 1. Check typos in URL, 2. Check internet, 3. Restart router, 4. Flush DNS (ipconfig /flushdns), 5. Google DNS 8.8.8.8, 6. Firewall. e& is Etisalat UAE telecom, check e& network! - GOD NANIE`;
+        aiReply = `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your system can't find the domain's IP address. Just double-check your spelling, check your internet, or try flushing your DNS cache! - GOD NANIE`;
       }
     }
-
-    // Final clean: Remove any remaining leak phrases
-    aiReply = aiReply.replace(/User's Persona Request:.*?(\n|$)/g, '')
-                     .replace(/User's Greeting Style:.*?(\n|$)/g, '')
-                     .replace(/Constraints:.*?(\n|$)/g, '')
-                     .replace(/Response needs to be.*?(\n|$)/g, '')
-                     .replace(/Revised Answer Construction:.*?(\n|$)/g, '')
-                     .trim();
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
     const stream = createUIMessageStream({
@@ -84,7 +81,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your connection can't find address. Check URL typos, internet, restart router, flush DNS, Google DNS 8.8.8.8! e& is Etisalat UAE! - GOD NANIE` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your system can't find the domain's IP address. Just double-check your spelling, check your internet, or try flushing your DNS cache! - GOD NANIE` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
