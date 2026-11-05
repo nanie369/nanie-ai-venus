@@ -13,31 +13,59 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    // Try models in order: 2.5-flash, 3.8-flash, 2.0-flash-lite - all new models work with AQ keys!
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash-lite'];
+    // New AQ keys need new models: 2.5-pro, flash-latest, pro-latest, 2.0-flash-001
+    const modelsToTry = [
+      'gemini-2.5-pro',
+      'gemini-2.0-flash-001',
+      'gemini-1.5-flash-001',
+      'gemini-flash-latest',
+      'gemini-pro-latest',
+      'gemini-2.5-flash-preview-04-17',
+      'gemini-2.0-flash-lite-001'
+    ];
+    
     let aiReply = '';
     let lastError = '';
 
     for (const model of modelsToTry) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      // Try v1 API first (new AQ keys work better with v1)
+      let res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: lastText }] }],
-          systemInstruction: { parts: [{ text: `You are NANIE AI VENUS SUPER AGENT - Built by Nanie Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT - Free domain nanie-ai-venus-7.vercel.app - e& ENOTFOUND fix - ESP32. Friendly bro style. Always reply!` }] }
+          systemInstruction: { parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT - e& ENOTFOUND fix. Friendly bro.` }] }
         }),
       });
-      const data = await res.json();
+      let data = await res.json();
+      
+      // If v1 fails, try v1beta
+      if (!data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: lastText }] }],
+            systemInstruction: { parts: [{ text: `You are NANIE AI VENUS - Dubai - Better than CHINNA` }] }
+          }),
+        });
+        data = await res.json();
+      }
+      
       if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
         aiReply = data.candidates[0].content.parts[0].text;
         break;
       } else {
-        lastError = JSON.stringify(data).substring(0,400);
+        lastError = `${model}: ${JSON.stringify(data).substring(0,300)}`;
       }
     }
 
     if (!aiReply) {
-      aiReply = `BRO! NANIE AI VENUS v11 LIVE! 🔥\n\nTried models: ${modelsToTry.join(', ')}\nLast Error: ${lastError}\n\nKey: ${apiKey.substring(0,15)}...\n\nGoogle retired old models for new AQ keys! Trying new models!\n\n- GOD NANIE - Better than CHINNA`;
+      // List available models
+      const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const listData = await listRes.json();
+      const available = listData.models?.slice(0,5).map((m:any)=>m.name).join(', ') || 'No models listed';
+      aiReply = `BRO! NANIE AI VENUS v12 LIVE! 🔥\n\nTried: ${modelsToTry.join(', ')}\nLast Error: ${lastError}\n\nAvailable models for your AQ key: ${available}\n\nKey: ${apiKey.substring(0,15)}...\n\nGo to https://aistudio.google.com/app/apikey and check models!\n\n- GOD NANIE`;
     }
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
@@ -55,7 +83,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! NANIE AI v11 Error: ${error.message} - GOD NANIE` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! v12 Error: ${error.message}` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
