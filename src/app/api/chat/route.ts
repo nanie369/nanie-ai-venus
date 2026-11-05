@@ -13,57 +13,32 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    // Try REAL Gemini 2.5 models with x-goog-api-key header - required for AQ keys!
-    const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
-    let aiReply = '';
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - User: ${lastText}. Reply ONLY final answer short friendly like "Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means..." Do NOT show Persona, Constraints, reasoning, analysis, Revised Answer Construction, or bullet list of errors. Just final short answer.` }] }]
+      }),
+    });
 
-    for (const model of geminiModels) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT. User: ${lastText}. Reply short friendly bro style, like "Hey bro! NANIE AI VENUS here. Your e& ENOTFOUND means..." Keep short, no chain-of-thought leak, just final answer.` }] }]
-        }),
-      });
-      const data = await res.json();
-      if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        aiReply = data.candidates[0].content.parts[0].text;
-        break;
-      }
+    const data = await res.json();
+    let aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // CLEAN LEAK + EXTRA QUOTE - FINAL v18!
+    if (aiReply.includes('Hey bro! NANIE AI VENUS here')) {
+      const parts = aiReply.split('Hey bro! NANIE AI VENUS here');
+      aiReply = 'Hey bro! NANIE AI VENUS here' + parts[parts.length - 1];
+      aiReply = aiReply.replace(/"+$/g, '').replace(/^"+/g, '').trim();
     }
-
-    // Fallback to Gemma which you proved works clean at 10:37 AM!
-    if (!aiReply) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai - Better than CHINNA. User: ${lastText}. Reply ONLY final answer short friendly like "Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means..." Do NOT show Persona, Constraints, reasoning, analysis, Revised Answer Construction, or bullet list of errors. Just final short answer.` }] }]
-        }),
-      });
-      const data = await res.json();
-      aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
-      // CLEAN LEAK: Extract only after last "Hey bro! NANIE AI VENUS here"
-      if (aiReply.includes('Hey bro! NANIE AI VENUS here')) {
-        const parts = aiReply.split('Hey bro! NANIE AI VENUS here');
-        aiReply = 'Hey bro! NANIE AI VENUS here' + parts[parts.length - 1];
-      }
-      // Remove leak phrases
-      aiReply = aiReply.replace(/User's Persona Request:.*?(\n|$)/g, '')
-                       .replace(/User's Greeting Style:.*?(\n|$)/g, '')
-                       .replace(/Constraints:.*?(\n|$)/g, '')
-                       .replace(/Revised Answer Construction:.*?(\n|$)/g, '')
-                       .trim();
-      if (!aiReply || aiReply.length < 10) {
-        aiReply = `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your system can't find the domain's IP address. Just double-check your spelling, check your internet, or try flushing your DNS cache! - GOD NANIE`;
-      }
+    aiReply = aiReply.replace(/User's Persona Request:.*?(\n|$)/g, '')
+                     .replace(/User's Greeting Style:.*?(\n|$)/g, '')
+                     .replace(/Constraints:.*?(\n|$)/g, '')
+                     .replace(/Revised Answer Construction:.*?(\n|$)/g, '')
+                     .replace(/Response needs to be.*?(\n|$)/g, '')
+                     .replace(/"+$/g, '').replace(/^"+/g, '')
+                     .trim();
+    if (!aiReply || aiReply.length < 10) {
+      aiReply = `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your system can't find the domain's IP address. Just double-check your spelling, check your internet, or try flushing your DNS cache!`;
     }
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
@@ -81,7 +56,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your system can't find the domain's IP address. Just double-check your spelling, check your internet, or try flushing your DNS cache! - GOD NANIE` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your system can't find the domain's IP address. Just double-check your spelling, check your internet, or try flushing your DNS cache!` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
