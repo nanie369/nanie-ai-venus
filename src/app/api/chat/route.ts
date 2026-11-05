@@ -5,7 +5,6 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
     
-    // Get last user message
     let lastText = 'hie bro';
     const last = messages[messages.length - 1];
     if (last) {
@@ -14,13 +13,13 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    // Direct Gemini API call with AQ key - works!
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+    // Try gemini-2.0-flash - works with AQ keys!
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: lastText }] }],
-        systemInstruction: { parts: [{ text: `You are NANIE AI VENUS SUPER AGENT - Built by Nanie Dubai COM8 D4->IN1 Yellow->IN1 Blue->VCC Red->GND - Better than CHINNA - NIL AMOUNT - Free domain nanie-ai-venus-7.vercel.app - e& ENOTFOUND fix - ESP32. Friendly bro style. Always reply! You are LIVE v9!` }] }
+        systemInstruction: { parts: [{ text: `You are NANIE AI VENUS SUPER AGENT - Built by Nanie Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT - Free domain nanie-ai-venus-7.vercel.app - e& ENOTFOUND fix - ESP32 Yellow D4->IN1. Friendly bro style. Always reply concisely!` }] }
       }),
     });
 
@@ -28,7 +27,17 @@ export async function POST(req: Request) {
     let aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!aiReply) {
-      aiReply = `BRO! NANIE AI VENUS v9 LIVE! 🔥\n\nGemini API Error: ${JSON.stringify(data).substring(0,300)}\n\nKey: ${apiKey.substring(0,15)}...\n\nThis error in grey proves GREY WORKS! Check Vercel env var!\n\n- GOD NANIE - Better than CHINNA`;
+      // Try fallback model gemini-1.5-flash if 2.0-flash fails
+      const res2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: lastText }] }],
+          systemInstruction: { parts: [{ text: `You are NANIE AI VENUS - Dubai - Better than CHINNA` }] }
+        }),
+      });
+      const data2 = await res2.json();
+      aiReply = data2?.candidates?.[0]?.content?.parts?.[0]?.text || `BRO! NANIE AI VENUS v10 LIVE! 🔥\n\nError: ${JSON.stringify(data).substring(0,400)}\n\nFallback Error: ${JSON.stringify(data2).substring(0,200)}\n\nKey: ${apiKey.substring(0,15)}...\n\n- GOD NANIE`;
     }
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
@@ -46,7 +55,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! NANIE AI VENUS v9 LIVE! 🔥\n\nCatch Error: ${error.message}\n\nKey starts: ${process.env.GOOGLE_GENERATIVE_AI_API_KEY?.substring(0,12)}...\n\nThis grey proves CHAT UI WORKS! - GOD NANIE` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! NANIE AI v10 Error: ${error.message} - GOD NANIE` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
