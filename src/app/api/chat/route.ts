@@ -13,30 +13,57 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    // ONLY Gemini models - NO Gemma - from your AQ key list!
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-preview-tts'];
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro'];
     let aiReply = '';
-    let lastError = '';
+    let allErrors = '';
 
     for (const model of modelsToTry) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
+      // Try v1beta first - new models work with v1beta!
+      let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Built by Nanie in Dubai COM8 D4->IN1 Yellow->IN1 Blue->VCC Red->GND - Better than CHINNA - NIL AMOUNT - Free domain. User asks: ${lastText}. Reply friendly like bro, short!` }] }]
+          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS Dubai COM8 D4->IN1 Better than CHINNA. User: ${lastText}. Reply short friendly bro style!` }] }]
         }),
       });
-      const data = await res.json();
+      let data = await res.json();
+      
       if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
         aiReply = data.candidates[0].content.parts[0].text;
         break;
       } else {
-        lastError = `${model}: ${JSON.stringify(data).substring(0,400)}`;
+        allErrors += `${model} v1beta: ${JSON.stringify(data).substring(0,300)}\n`;
+      }
+
+      // Try v1 if v1beta fails
+      res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS Dubai. User: ${lastText}` }] }]
+        }),
+      });
+      data = await res.json();
+      
+      if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        aiReply = data.candidates[0].content.parts[0].text;
+        break;
+      } else {
+        allErrors += `${model} v1: ${JSON.stringify(data).substring(0,300)}\n`;
       }
     }
 
     if (!aiReply) {
-      aiReply = `BRO! NANIE AI VENUS v13 LIVE! 🔥 Real Gemini failed!\nLast Error: ${lastError}\n\nKey: ${apiKey.substring(0,15)}...\n\nYour AQ key lists gemini-2.5-flash and gemini-2.5-pro but API error!\n\n- GOD NANIE`;
+      // Fallback to gemma which WORKS!
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - Friendly bro. User asks: ${lastText}. Reply short friendly! Don't mention you are Gemma, say you are NANIE AI VENUS!` }] }]
+        }),
+      });
+      const data = await res.json();
+      aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || `BRO! NANIE AI VENUS v14 LIVE! 🔥\n\nTried: ${modelsToTry.join(', ')}\nErrors:\n${allErrors}\n\nKey: ${apiKey.substring(0,15)}...\n\nGemma works but Gemini 2.5 fails! Your AQ key needs new Interactions API?\n\n- GOD NANIE`;
     }
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
@@ -54,7 +81,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! v13 Error: ${error.message}` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! v14 Error: ${error.message}` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
