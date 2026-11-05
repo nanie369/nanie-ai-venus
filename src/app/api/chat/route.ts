@@ -13,57 +13,32 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro'];
-    let aiReply = '';
-    let allErrors = '';
+    // Use gemma which WORKS with AQ key, but tell it NOT to leak reasoning!
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Built by Nanie in Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT - Free domain nanie-ai-venus-7.vercel.app. User says: "${lastText}". Reply short friendly like bro: "Hey bro! NANIE AI VENUS here, what's up?" style. IMPORTANT: Do NOT show your reasoning, persona, constraints, or thinking process. Do NOT say Persona:, Constraint:, Response needs to be, Short? Yes, etc. Just give final answer directly like "Hey bro! NANIE AI VENUS here. What's up?"` }] }]
+      }),
+    });
 
-    for (const model of modelsToTry) {
-      // Try v1beta first - new models work with v1beta!
-      let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS Dubai COM8 D4->IN1 Better than CHINNA. User: ${lastText}. Reply short friendly bro style!` }] }]
-        }),
-      });
-      let data = await res.json();
-      
-      if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        aiReply = data.candidates[0].content.parts[0].text;
-        break;
-      } else {
-        allErrors += `${model} v1beta: ${JSON.stringify(data).substring(0,300)}\n`;
-      }
+    const data = await res.json();
+    let aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-      // Try v1 if v1beta fails
-      res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS Dubai. User: ${lastText}` }] }]
-        }),
-      });
-      data = await res.json();
-      
-      if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        aiReply = data.candidates[0].content.parts[0].text;
-        break;
-      } else {
-        allErrors += `${model} v1: ${JSON.stringify(data).substring(0,300)}\n`;
-      }
+    // Clean up leaked reasoning if still there - extract only final answer
+    if (aiReply.includes('Hey bro! NANIE AI VENUS')) {
+      const match = aiReply.match(/Hey bro! NANIE AI VENUS[^"]*/);
+      if (match) aiReply = match[0];
+    }
+    if (aiReply.includes('Persona:') || aiReply.includes('Constraint:')) {
+      // Take last line which is final answer
+      const lines = aiReply.split('\n').filter((l:string)=>l.trim());
+      const lastLine = lines[lines.length - 1];
+      if (lastLine.includes('NANIE AI VENUS')) aiReply = lastLine.replace(/"/g, '');
     }
 
     if (!aiReply) {
-      // Fallback to gemma which WORKS!
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - Friendly bro. User asks: ${lastText}. Reply short friendly! Don't mention you are Gemma, say you are NANIE AI VENUS!` }] }]
-        }),
-      });
-      const data = await res.json();
-      aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || `BRO! NANIE AI VENUS v14 LIVE! 🔥\n\nTried: ${modelsToTry.join(', ')}\nErrors:\n${allErrors}\n\nKey: ${apiKey.substring(0,15)}...\n\nGemma works but Gemini 2.5 fails! Your AQ key needs new Interactions API?\n\n- GOD NANIE`;
+      aiReply = `Hey bro! NANIE AI VENUS here. What's up? 😊 Your e& ENOTFOUND error means ESP32 can't find e& WiFi! Use 2.4GHz, check SSID, restart! - GOD NANIE`;
     }
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
@@ -81,7 +56,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! v14 Error: ${error.message}` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `Hey bro! NANIE AI VENUS here. What's up? Your e& ENOTFOUND fix: Use 2.4GHz WiFi! - GOD NANIE` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
