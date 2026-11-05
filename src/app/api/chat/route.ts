@@ -17,23 +17,31 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Free AI agent. User: ${lastText}. Reply short friendly like "Hey bro! NANIE AI VENUS here, what's up?" Do NOT show reasoning, persona, constraints. Just final answer.` }] }]
+        contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Free AI agent. User says: ${lastText}. Reply ONLY with "Hey bro! NANIE AI VENUS here, what's up? [answer]" Keep it short friendly. No bullet list, no reasoning check, no persona talk.` }] }]
       }),
     });
 
     const data = await res.json();
     let aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
-    if (aiReply.includes('Hey bro! NANIE AI VENUS here')) {
-      const parts = aiReply.split('Hey bro! NANIE AI VENUS here');
-      aiReply = 'Hey bro! NANIE AI VENUS here' + parts[parts.length - 1];
-      aiReply = aiReply.replace(/"+$/g, '').replace(/^"+/g, '').trim();
+    // CLEAN v20 - Remove all leaks!
+    if (aiReply.includes('Does it show')) {
+      aiReply = aiReply.split('Does it show')[0];
     }
-    aiReply = aiReply.replace(/User's Persona Request:.*?(\n|$)/g, '')
-                     .replace(/Constraints:.*?(\n|$)/g, '')
-                     .replace(/Revised Answer Construction:.*?(\n|$)/g, '')
-                     .replace(/"+$/g, '').replace(/^"+/g, '')
-                     .trim();
+    if (aiReply.includes('* Is it')) {
+      aiReply = aiReply.split('* Is it')[0];
+    }
+    if (aiReply.includes('* Does it')) {
+      aiReply = aiReply.split('* Does it')[0];
+    }
+    // Keep only first 2 sentences max, clean extra quote
+    aiReply = aiReply.split('\n')[0].trim();
+    aiReply = aiReply.replace(/"+$/g, '').replace(/^"+/g, '').trim();
+    // Fix extra quote in middle
+    aiReply = aiReply.replace(/\?"$/g, '?').replace(/what's up\?"}/g, "what's up?").replace(/\?"/g, '?');
+    if (!aiReply.includes("what's up?")) {
+      aiReply = aiReply.replace(/what's up[^?]*/g, "what's up?");
+    }
     if (!aiReply || aiReply.length < 10) {
       aiReply = `Hey bro! NANIE AI VENUS here, what's up?`;
     }
