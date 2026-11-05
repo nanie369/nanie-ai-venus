@@ -13,31 +13,31 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    // Try gemini-2.0-flash - works with AQ keys!
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: lastText }] }],
-        systemInstruction: { parts: [{ text: `You are NANIE AI VENUS SUPER AGENT - Built by Nanie Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT - Free domain nanie-ai-venus-7.vercel.app - e& ENOTFOUND fix - ESP32 Yellow D4->IN1. Friendly bro style. Always reply concisely!` }] }
-      }),
-    });
+    // Try models in order: 2.5-flash, 3.8-flash, 2.0-flash-lite - all new models work with AQ keys!
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-3.8-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-flash-lite'];
+    let aiReply = '';
+    let lastError = '';
 
-    const data = await res.json();
-    let aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!aiReply) {
-      // Try fallback model gemini-1.5-flash if 2.0-flash fails
-      const res2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    for (const model of modelsToTry) {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: lastText }] }],
-          systemInstruction: { parts: [{ text: `You are NANIE AI VENUS - Dubai - Better than CHINNA` }] }
+          systemInstruction: { parts: [{ text: `You are NANIE AI VENUS SUPER AGENT - Built by Nanie Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT - Free domain nanie-ai-venus-7.vercel.app - e& ENOTFOUND fix - ESP32. Friendly bro style. Always reply!` }] }
         }),
       });
-      const data2 = await res2.json();
-      aiReply = data2?.candidates?.[0]?.content?.parts?.[0]?.text || `BRO! NANIE AI VENUS v10 LIVE! 🔥\n\nError: ${JSON.stringify(data).substring(0,400)}\n\nFallback Error: ${JSON.stringify(data2).substring(0,200)}\n\nKey: ${apiKey.substring(0,15)}...\n\n- GOD NANIE`;
+      const data = await res.json();
+      if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+        aiReply = data.candidates[0].content.parts[0].text;
+        break;
+      } else {
+        lastError = JSON.stringify(data).substring(0,400);
+      }
+    }
+
+    if (!aiReply) {
+      aiReply = `BRO! NANIE AI VENUS v11 LIVE! 🔥\n\nTried models: ${modelsToTry.join(', ')}\nLast Error: ${lastError}\n\nKey: ${apiKey.substring(0,15)}...\n\nGoogle retired old models for new AQ keys! Trying new models!\n\n- GOD NANIE - Better than CHINNA`;
     }
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! NANIE AI v10 Error: ${error.message} - GOD NANIE` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `BRO! NANIE AI v11 Error: ${error.message} - GOD NANIE` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
