@@ -13,16 +13,19 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    // Try REAL Gemini models from your AQ key list - 2.5-flash and 2.5-pro!
+    // Try REAL Gemini 2.5 models with x-goog-api-key header - required for AQ keys!
     const geminiModels = ['gemini-2.5-flash', 'gemini-2.5-pro'];
     let aiReply = '';
 
     for (const model of geminiModels) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Built by Nanie in Dubai COM8 D4->IN1 Yellow->IN1 Blue VCC Red GND - Better than CHINNA - e& ENOTFOUND fix - ESP32. User: ${lastText}. Reply short friendly bro style, no reasoning leak, just final answer like "Hey bro! NANIE AI VENUS here. What's up?"` }] }]
+          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - NIL AMOUNT. User: ${lastText}. Reply short friendly bro style, like "Hey bro! NANIE AI VENUS here. Your e& ENOTFOUND means..." Keep short, no chain-of-thought leak, just final answer.` }] }]
         }),
       });
       const data = await res.json();
@@ -32,23 +35,39 @@ export async function POST(req: Request) {
       }
     }
 
-    // Fallback to Gemma which you proved works clean!
+    // Fallback to Gemma which you proved works, but CLEAN leak!
     if (!aiReply) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey
+        },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - User: ${lastText}. Reply short friendly bro like "Hey bro! NANIE AI VENUS here, what's up?" Do NOT show reasoning, persona, constraints. Just final answer.` }] }]
+          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai - Better than CHINNA. User: ${lastText}. Reply ONLY final answer short friendly like "Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means..." Do NOT show Persona, Constraints, reasoning, analysis, Revised Answer Construction, or bullet list of errors. Just final short answer.` }] }]
         }),
       });
       const data = await res.json();
-      aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || `Hey bro! NANIE AI VENUS here. What's up? Your e& ENOTFOUND fix: Use 2.4GHz WiFi, check SSID, restart ESP32! - GOD NANIE`;
-      // Clean leak if any
-      if (aiReply.includes('Persona:') || aiReply.includes('Constraint:')) {
-        const lines = aiReply.split('\n').filter((l:string)=>l.trim() && !l.includes('Persona:') && !l.includes('Constraint:') && !l.includes('Response needs') && !l.includes('Short?') && !l.includes('Friendly?'));
-        aiReply = lines[lines.length - 1] || aiReply;
+      aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      // CLEAN LEAK: Extract only after last "Hey bro! NANIE AI VENUS here"
+      if (aiReply.includes('Hey bro! NANIE AI VENUS here')) {
+        const parts = aiReply.split('Hey bro! NANIE AI VENUS here');
+        aiReply = 'Hey bro! NANIE AI VENUS here' + parts[parts.length - 1];
+        aiReply = aiReply.split('Persona:')[0].split('Constraint:')[0].split('Revised Answer')[0].trim();
+      }
+      if (!aiReply || aiReply.length < 10) {
+        aiReply = `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your connection can't find the address. Try: 1. Check typos in URL, 2. Check internet, 3. Restart router, 4. Flush DNS (ipconfig /flushdns), 5. Google DNS 8.8.8.8, 6. Firewall. e& is Etisalat UAE telecom, check e& network! - GOD NANIE`;
       }
     }
+
+    // Final clean: Remove any remaining leak phrases
+    aiReply = aiReply.replace(/User's Persona Request:.*?(\n|$)/g, '')
+                     .replace(/User's Greeting Style:.*?(\n|$)/g, '')
+                     .replace(/Constraints:.*?(\n|$)/g, '')
+                     .replace(/Response needs to be.*?(\n|$)/g, '')
+                     .replace(/Revised Answer Construction:.*?(\n|$)/g, '')
+                     .trim();
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
     const stream = createUIMessageStream({
@@ -65,7 +84,7 @@ export async function POST(req: Request) {
     const stream = createUIMessageStream({
       execute: ({ writer }) => {
         writer.write({ type: 'text-start', id: 'text-1' });
-        writer.write({ type: 'text-delta', id: 'text-1', delta: `Hey bro! NANIE AI VENUS here. What's up? Your e& ENOTFOUND: Use 2.4GHz! - GOD NANIE` });
+        writer.write({ type: 'text-delta', id: 'text-1', delta: `Hey bro! NANIE AI VENUS here, what's up? ENOTFOUND means your connection can't find address. Check URL typos, internet, restart router, flush DNS, Google DNS 8.8.8.8! e& is Etisalat UAE! - GOD NANIE` });
         writer.write({ type: 'text-end', id: 'text-1' });
       },
     });
