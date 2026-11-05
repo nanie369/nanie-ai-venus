@@ -13,17 +13,17 @@ export async function POST(req: Request) {
       else if (last.text) lastText = last.text;
     }
 
-    // Models that YOUR AQ key supports (from your screenshot list!)
-    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-preview-tts', 'gemma-4-26b-a4b-it'];
+    // ONLY Gemini models - NO Gemma - from your AQ key list!
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-preview-tts'];
     let aiReply = '';
     let lastError = '';
 
     for (const model of modelsToTry) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Dubai COM8 D4->IN1 - Better than CHINNA - Friendly bro. User asks: ${lastText}` }] }]
+          contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Built by Nanie in Dubai COM8 D4->IN1 Yellow->IN1 Blue->VCC Red->GND - Better than CHINNA - NIL AMOUNT - Free domain. User asks: ${lastText}. Reply friendly like bro, short!` }] }]
         }),
       });
       const data = await res.json();
@@ -31,12 +31,12 @@ export async function POST(req: Request) {
         aiReply = data.candidates[0].content.parts[0].text;
         break;
       } else {
-        lastError = `${model}: ${JSON.stringify(data).substring(0,300)}`;
+        lastError = `${model}: ${JSON.stringify(data).substring(0,400)}`;
       }
     }
 
     if (!aiReply) {
-      aiReply = `BRO! NANIE AI VENUS v13 LIVE! 🔥\n\nTried: ${modelsToTry.join(', ')}\nLast Error: ${lastError}\n\nYour AQ key supports: gemini-2.5-flash, gemini-2.5-pro - but API returned error!\n\nKey: ${apiKey.substring(0,15)}...\n\nTry creating new key at https://aistudio.google.com/app/apikey\n\n- GOD NANIE`;
+      aiReply = `BRO! NANIE AI VENUS v13 LIVE! 🔥 Real Gemini failed!\nLast Error: ${lastError}\n\nKey: ${apiKey.substring(0,15)}...\n\nYour AQ key lists gemini-2.5-flash and gemini-2.5-pro but API error!\n\n- GOD NANIE`;
     }
 
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
