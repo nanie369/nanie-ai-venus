@@ -14,16 +14,24 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: `You are NANIE AI VENUS - Free AI Agent, Brain v21 Super Brain. You help with: Code, Math, Ideas, Translate, YouTube summaries, TikTok captions, Home automation ESP32, Tech support. User: ${lastText}. Reply friendly like "Hey bro! NANIE AI VENUS here, what's up? [answer]" Short, helpful, no bullet reasoning check, no persona talk, no leak. If user asks code, give code. If math, solve step by step. If TikTok, give viral caption. If YouTube, summarize.` }] }]
+        contents: [{ role: 'user', parts: [{ text: `Hi, reply friendly: ${lastText}` }] }]
       }),
     });
     const data = await res.json();
     let aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    if (aiReply.includes('Does it show')) aiReply = aiReply.split('Does it show')[0];
-    if (aiReply.includes('* Does it')) aiReply = aiReply.split('* Does it')[0];
-    if (aiReply.includes('* Is it')) aiReply = aiReply.split('* Is it')[0];
-    aiReply = aiReply.split('\n').slice(0,8).join('\n').trim().replace(/"+$/g,'').replace(/^"+/g,'').trim();
-    if (!aiReply || aiReply.length < 10) aiReply = `Hey bro! NANIE AI VENUS here, what's up?`;
+    // v22 ULTRA CLEAN - Remove ALL leaks
+    if (aiReply.includes('User prompt')) aiReply = aiReply.split('User prompt')[0];
+    if (aiReply.includes('Core Task')) aiReply = aiReply.split('Core Task')[0];
+    if (aiReply.includes('Developer:')) aiReply = aiReply.split('Developer:')[0];
+    if (aiReply.includes('Gemma')) aiReply = aiReply.replace(/Gemma/g, 'NANIE AI VENUS');
+    if (aiReply.includes('Google DeepMind')) aiReply = aiReply.replace(/Google DeepMind/g, 'NANIE AI VENUS');
+    if (aiReply.includes('Conflict:')) aiReply = aiReply.split('Conflict:')[0];
+    if (aiReply.includes('Name:')) aiReply = aiReply.split('Name:')[0];
+    if (aiReply.includes('Instructions:')) aiReply = aiReply.split('Instructions:')[0];
+    aiReply = aiReply.trim();
+    if (!aiReply || aiReply.length < 5) aiReply = `Hey bro! NANIE AI VENUS here, what's up?`;
+    if (!aiReply.includes('NANIE AI VENUS')) aiReply = `Hey bro! NANIE AI VENUS here, what's up? ` + aiReply;
+    aiReply = aiReply.replace(/"+$/g,'').trim();
     const { createUIMessageStream, createUIMessageStreamResponse } = await import('ai');
     const stream = createUIMessageStream({ execute: ({ writer }) => { writer.write({ type: 'text-start', id: 'text-1' }); writer.write({ type: 'text-delta', id: 'text-1', delta: aiReply }); writer.write({ type: 'text-end', id: 'text-1' }); }, });
     return createUIMessageStreamResponse({ stream });
